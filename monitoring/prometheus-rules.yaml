@@ -1,0 +1,26 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: llm-inference-alerts
+  labels:
+    app: prometheus
+spec:
+  groups:
+  - name: triton.rules
+    rules:
+    - alert: HighLatency
+      expr: histogram_quantile(0.95, sum(rate(nv_inference_request_duration_us_bucket[5m])) by (le)) > 500000
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: High Inference Latency
+        description: 95th percentile latency is over 500ms for 5 minutes.
+    - alert: GPUUnderutilization
+      expr: DCGM_FI_DEV_GPU_UTIL < 80
+      for: 15m
+      labels:
+        severity: info
+      annotations:
+        summary: GPU Underutilization
+        description: GPU utilization is below 80% for 15 minutes.

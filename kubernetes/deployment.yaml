@@ -1,0 +1,67 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: llm-inference-server
+  labels:
+    app: llm-inference-server
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: llm-inference-server
+  template:
+    metadata:
+      labels:
+        app: llm-inference-server
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "8002"
+    spec:
+      containers:
+      - name: triton-server
+        image: nvcr.io/nvidia/tritonserver:24.03-vllm-python-py3
+        command: ["tritonserver"]
+        args: ["--model-repository=/model_repository"]
+        ports:
+        - containerPort: 8000
+          name: http
+        - containerPort: 8001
+          name: grpc
+        - containerPort: 8002
+          name: metrics
+        resources:
+          limits:
+            nvidia.com/gpu: "1"
+            memory: "32Gi"
+            cpu: "8"
+          requests:
+            nvidia.com/gpu: "1"
+            memory: "16Gi"
+            cpu: "4"
+        volumeMounts:
+        - name: model-repository
+          mountPath: /model_repository
+        - name: shm
+          mountPath: /dev/shm
+        livenessProbe:
+          httpGet:
+            path: /v2/health/live
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 15
+        readinessProbe:
+          httpGet:
+            path: /v2/health/ready
+            port: http
+          initialDelaySeconds: 30
+          periodSeconds: 15
+      volumes:
+      - name: model-repository
+        configMap:
+          name: triton-model-repository
+      - name: shm
+        emptyDir:
+          medium: Memory
+          sizeLimit: 16Gi
+      nodeSelector:
+        node.kubernetes.io/instance-type: g4dn.2xlarge

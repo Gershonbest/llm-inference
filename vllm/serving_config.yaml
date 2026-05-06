@@ -1,0 +1,5 @@
+model: LiquidAI/LFM2.5-350M-GGUF
+tensor_parallel_size: 1
+gpu_memory_utilization: 0.85
+max_num_batched_tokens: 4096
+max_num_seqs: 256

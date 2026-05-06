@@ -1,0 +1,5 @@
+{
+  "model": "LiquidAI/LFM2.5-350M-GGUF",
+  "disable_log_requests": true,
+  "gpu_memory_utilization": 0.95
+}
